@@ -1,8 +1,8 @@
 {
   "name": "github-sls-rest-api",
-  "version": "1.0.0-0",
+  "version": "1.0.0-1",
   "license": "UNLICENSED",
-  "engines": { 
+  "engines": {
     "node": ">=0.14"
   },
   "scripts": {
