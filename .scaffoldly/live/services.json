@@ -1,0 +1,16 @@
+{
+  "auth-sls-rest-api": {
+    "api-id": "g5rxxul2ma",
+    "api-resource-id": "gw01ym9mfh",
+    "base-url": "https://api.tfstate.dev/auth",
+    "service-name": "auth-sls-rest-api",
+    "service-slug": "auth"
+  },
+  "github-sls-rest-api": {
+    "api-id": "6y5dgy46hf",
+    "api-resource-id": "h30pmz3pa7",
+    "base-url": "https://api.tfstate.dev/github",
+    "service-name": "github-sls-rest-api",
+    "service-slug": "github"
+  }
+}
