@@ -1,0 +1,48 @@
+name: "Nonlive Deploy"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  AWS_PARTITION: ${{ secrets.NONLIVE_AWS_PARTITION }}
+  AWS_ACCOUNT_ID: ${{ secrets.NONLIVE_AWS_ACCOUNT_ID }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.NONLIVE_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.NONLIVE_AWS_SECRET_ACCESS_KEY }}
+  AWS_REST_API_ID: ${{ secrets.NONLIVE_AWS_REST_API_ID }}
+  AWS_REST_API_ROOT_RESOURCE_ID: ${{ secrets.NONLIVE_AWS_REST_API_ROOT_RESOURCE_ID }}
+  NODE_ENV: nonlive
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: >- 
+      !startsWith(github.event.head_commit.message, 'Initial commit') && 
+      !startsWith(github.event.head_commit.message, '🤖')
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '14'
+      - uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('./yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - uses: actions/cache@v2
+        with:
+          path: ./src/services/openapi
+          key: ${{ runner.os }}-openapi-${{ hashFiles('./.openapis') }}
+          restore-keys: |
+            ${{ runner.os }}-openapi-
+      - run: yarn
+      - uses: scaffoldly/bump-version-action@v1
+        with:
+          action: prerelease
+          version-file: package.json
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: yarn deploy --stage $NODE_ENV

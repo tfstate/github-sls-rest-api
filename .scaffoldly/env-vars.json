@@ -1,0 +1,9 @@
+{
+  "stage-domain": "localhost",
+  "api-gateway-domain": "localhost",
+  
+  "service-name": "github-sls-rest-api",
+  "service-slug": "github",
+  "application-name": "github",
+  "organization-name": "github"
+}

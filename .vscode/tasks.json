@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "prepare",
+      "type": "shell",
+      "presentation": {
+        "group": "api",
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "clear": true
+      },
+      "command": "yarn",
+      "args": ["prepare"]
+    }
+  ]
+}

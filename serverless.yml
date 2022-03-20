@@ -1,0 +1,127 @@
+service: ${file(serverless.config.js):serviceName}
+
+frameworkVersion: 2.57.0
+variablesResolutionMode: "20210326"
+configValidationMode: off
+disabledDeprecations:
+  - "*"
+
+plugins:
+  - serverless-bundle
+  - serverless-dotenv-plugin
+  - serverless-dynamodb-local
+  - serverless-plugin-resource-tagging
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  lambdaHashingVersion: "20201221"
+  cfnRole: arn:${env:AWS_PARTITION, ""}:iam::${env:AWS_ACCOUNT_ID, ""}:role/${self:service}-cloudformation
+  stage: ${opt:stage, "local"}
+  logRetentionInDays: 1
+  apiGateway:
+    restApiId: ${env:AWS_REST_API_ID, "0000000000"}
+    restApiRootResourceId: ${env:AWS_REST_API_ROOT_RESOURCE_ID, "0000000000"}
+  tracing:
+    lambda: true
+  environment:
+    API_GATEWAY_DOMAIN: ${file(serverless.config.js):apiGatewayDomain}
+    STAGE_DOMAIN: ${file(serverless.config.js):stageDomain}
+    SERVICE_NAME: ${file(serverless.config.js):serviceName}
+    SERVICE_SLUG: ${file(serverless.config.js):serviceSlug}
+    STAGE: ${opt:stage, "local"}
+  stackTags:
+    ServiceName: ${self:service}
+    ServiceSlug: ${file(serverless.config.js):serviceSlug}
+    ServiceStage: ${opt:stage, "local"}
+
+functions:
+  lambda-handler:
+    role: arn:${env:AWS_PARTITION, ""}:iam::${env:AWS_ACCOUNT_ID, ""}:role/${self:service}-${opt:stage, "local"}
+    handler: src/lambda.handler
+    timeout: 30
+    events:
+      - http:
+          path: /
+          method: any
+      - http:
+          path: /
+          method: options
+      - http:
+          path: /{proxy+}
+          method: any
+      - http:
+          path: /{proxy+}
+          method: options
+
+
+resources:
+  Resources:
+    Secret:
+      Type: AWS::SecretsManager::Secret
+      Properties: 
+        Name: lambda/${opt:stage, "local"}/${self:service}
+        SecretString: 
+          "{}"
+
+    Table:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${opt:stage, "local"}-${self:service}
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: sk-pk-index
+            KeySchema:
+              - AttributeName: sk
+                KeyType: HASH
+              - AttributeName: pk
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TimeToLiveSpecification:
+          AttributeName: expires
+          Enabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        SSESpecification:
+          SSEEnabled: true
+        BillingMode: PAY_PER_REQUEST
+
+
+custom:
+  serverless-offline:
+    useChildProcesses: false
+    noPrependStageInUrl: true
+    prefix: ${file(serverless.config.js):serviceSlug}
+
+  bundle:
+    packager: yarn
+    externals:
+      - tsoa
+    copyFiles:
+      - from: 'public/*'
+        to: './'
+
+
+  dynamodb:
+    stages:
+      - local
+    start:
+      port: 8100
+      dbPath: .dynamodb
+      migrate: true
+  serverless-offline-dynamodb-streams:
+    endpoint: http://0.0.0.0:8100
+
