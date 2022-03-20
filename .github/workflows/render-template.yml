@@ -1,0 +1,30 @@
+name: Render Template
+
+on:
+  workflow_dispatch:
+    inputs:
+      archetect-source:
+        description: "Archetype Source Git URL"
+        required: true
+      archetect-options:
+        description: "Archetect Render Options"
+        required: false
+      github-token:
+        description: "A GitHub Token with `repo` and `workflows` permission"
+        required: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ github.event.inputs.github-token }}
+      - run: |
+          echo "${{ github.run_id }}:" >> .archetect-history
+          echo "  source: '${{ github.event.inputs.archetect-source }}'" >> .archetect-history
+          echo "  options: '${{ github.event.inputs.archetect-options }}'" >> .archetect-history
+      - uses: scaffoldly/archetect-render-action@v1
+        with:
+          source: "${{ github.event.inputs.archetect-source }}"
+          options: "${{ github.event.inputs.archetect-options }}"
