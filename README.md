@@ -15,9 +15,7 @@ Features:
 
 ## Usage
 
-### 1. Create a `tfstate.tfbackend` file with a GitHub Token with `repo` or
-
-`repo:read` access to the Repository specified by `username`:
+### 1. Create a `tfstate.tfbackend` file with a GitHub Token with `repo` or `repo:read` access to the Repository specified by `username`:
 
 ```hcl
 username = "my-org/my-repo"
@@ -64,15 +62,15 @@ on GitHub.
 - [cnuss](https://github.com/cnuss)
 - [Scaffoldly](https://github.com/scaffoldly)
 
-# About `tfstate.dev` and Scaffoldly
+# About Scaffoldly and `tfstate.dev`
+
+[Scaffoldly](https://scaffold.ly) provides various services and automations to
+simplify Infrastructure Bootstrapping and DevOps.
 
 `tfstate.dev` is provided as a free and easy way to store Terraform State. We've
 open sourced it for transparency to show how we handlea and secure state access
 and storage. We were inspired by GitLab's ability to host Terraform State, and
 wanted the same functionality for GitHub.
-
-[Scaffoldly](https://scaffold.ly) provides various services and automations to
-simplify Infrastructure Bootstrapping and DevOps.
 
 Scaffoldly is not affiliated with GitHub.
 
