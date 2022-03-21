@@ -1,7 +1,8 @@
 # Terraform Remote State Management using a GitHub Token
 
-[Scaffoldly](https://scaffold.ly) provides [a remote state backend]() for secure
-Terraform State hosting using a GitHub Token.
+[Scaffoldly](https://scaffold.ly) provides [a Remote State API](https://api.tfstate.dev/github/swagger.html)
+for secure [Terraform Remote State](https://www.terraform.io/language/settings/backends/http)
+hosting using a GitHub Token.
 
 Features:
 
