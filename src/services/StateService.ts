@@ -8,10 +8,6 @@ import moment from 'moment';
 import { StateLockRequest } from '../models/interfaces';
 import { TerraformError } from '../interfaces/errors';
 
-// TODO Save old states
-// TODO Unlock state testing
-// TODO: Research when state should be auto-unlocked after a plan operation
-
 export class StateService {
   encryptionService: EncryptionService;
 
@@ -24,21 +20,6 @@ export class StateService {
     this.stateLockModel = new StateLockModel();
     this.encryptionService = new KmsService();
   }
-
-  public getState = async (identity: Identity): Promise<any> => {
-    const state = await this.stateModel.model.get(
-      StateModel.prefix('pk', identity.ownerId),
-      StateModel.prefix('sk', identity.repoId),
-    );
-
-    if (!state) {
-      return null;
-    }
-
-    const stateBase64 = await this.encryptionService.decrypt(state.attrs.encryptedState);
-
-    return JSON.parse(Buffer.from(stateBase64, 'base64').toString('utf8'));
-  };
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public saveState = async (identity: Identity, id: string, state: any): Promise<void> => {
@@ -80,6 +61,21 @@ export class StateService {
       repo: identity.repo,
       encryptedState,
     });
+  };
+
+  public getState = async (identity: Identity): Promise<any> => {
+    const state = await this.stateModel.model.get(
+      StateModel.prefix('pk', identity.ownerId),
+      StateModel.prefix('sk', identity.repoId),
+    );
+
+    if (!state) {
+      return null;
+    }
+
+    const stateBase64 = await this.encryptionService.decrypt(state.attrs.encryptedState);
+
+    return JSON.parse(Buffer.from(stateBase64, 'base64').toString('utf8'));
   };
 
   public lockState = async (

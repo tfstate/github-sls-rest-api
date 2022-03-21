@@ -18,7 +18,7 @@ const services = NODE_ENV
     basePath: `/${envVars['service-slug']}`,
     name: envVars['application-name'],
     version: packageJson.version,
-    description: `To generate a JWT token, go to the <a href="${services['auth-sls-rest-api']['base-url']}/jwt.html" target="_blank">JWT Token Generator</a>`,
+    description: `<a href="https://github.com/tfstate/github-sls-rest-api" target="_blank">Terraform Remote State</a> API`,
     entryFile: 'src/app.ts',
     noImplicitAdditionalProperties: 'throw-on-extras',
     controllerPathGlobs: ['src/**/*Controller*.ts'],
