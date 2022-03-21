@@ -24,13 +24,13 @@ const services = NODE_ENV
     controllerPathGlobs: ['src/**/*Controller*.ts'],
     outputDirectory: 'src',
     specVersion: 3,
-    securityDefinitions: {
-      jwt: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-    },
+    // securityDefinitions: {
+    //   jwt: {
+    //     type: 'http',
+    //     scheme: 'bearer',
+    //     bearerFormat: 'JWT',
+    //   },
+    // },
   });
 
   console.log('Generating routes...');
@@ -39,7 +39,7 @@ const services = NODE_ENV
     noImplicitAdditionalProperties: 'throw-on-extras',
     controllerPathGlobs: ['src/**/*Controller*.ts'],
     routesDir: 'src',
-    authenticationModule: 'src/auth.ts',
+    // authenticationModule: 'src/auth.ts',
     noWriteIfUnchanged: true,
   });
 })();

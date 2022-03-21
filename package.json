@@ -2,7 +2,7 @@
   "name": "github-sls-rest-api",
   "version": "1.0.0-0",
   "license": "UNLICENSED",
-  "engines": { 
+  "engines": {
     "node": ">=0.14"
   },
   "scripts": {
@@ -49,6 +49,7 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
+    "@octokit/rest": "^18.12.0",
     "@scaffoldly/serverless-util": "^4.0.15",
     "@vendia/serverless-express": "^4.5.2",
     "aws-lambda": "^1.0.6",

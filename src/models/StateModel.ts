@@ -7,18 +7,18 @@ import {
   unmarshallDynamoDBImage,
 } from '@scaffoldly/serverless-util';
 import { StreamRecord } from 'aws-lambda';
-import { Example } from './interfaces';
-import { example } from './schemas/Example';
+import { State } from './interfaces';
+import { state } from './schemas/State';
 
 const TABLE_SUFFIX = '';
 
-export class ExampleModel {
-  public readonly table: Table<Example>;
+export class StateModel {
+  public readonly table: Table<State>;
 
-  public readonly model: Model<Example>;
+  public readonly model: Model<State>;
 
   constructor() {
-    this.table = new Table(TABLE_SUFFIX, SERVICE_NAME, STAGE, example, 'pk', 'sk', [
+    this.table = new Table(TABLE_SUFFIX, SERVICE_NAME, STAGE, state, 'pk', 'sk', [
       { hashKey: 'sk', rangeKey: 'pk', name: 'sk-pk-index', type: 'global' },
     ]);
 
@@ -28,13 +28,13 @@ export class ExampleModel {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   static prefix = (col: 'pk' | 'sk', value?: any): string => {
     if (col === 'pk') {
-      return `userid_${value || ''}`;
+      return `github_${value || ''}`;
     }
-    return `example_${value || ''}`;
+    return `state_${value || ''}`;
   };
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  static isExample = (record: StreamRecord): boolean => {
+  static isState = (record: StreamRecord): boolean => {
     if (!record) {
       return false;
     }
@@ -48,8 +48,8 @@ export class ExampleModel {
     const { pk, sk } = check;
 
     try {
-      Joi.assert(pk, example.pk);
-      Joi.assert(sk, example.sk);
+      Joi.assert(pk, state.pk);
+      Joi.assert(sk, state.sk);
     } catch (e) {
       return false;
     }

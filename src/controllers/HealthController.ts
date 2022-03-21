@@ -8,7 +8,7 @@ export type HealthResponse = {
   version: string;
 };
 
-@Route('/api/health')
+@Route('/health')
 @Tags('Health')
 export class HealthController extends Controller {
   @Get()
