@@ -8,6 +8,7 @@ export type Identity = {
   ownerId: number;
   repo: string;
   repoId: number;
+  workspace: string;
   token: string;
 };
 
@@ -42,6 +43,7 @@ export class GithubService {
     const [username, password] = decoded.split(':');
     let owner: string | undefined;
     let repo: string | undefined;
+    let workspace: string | undefined;
 
     if (!password) {
       console.warn(`Missing password from authorization token`);
@@ -49,15 +51,26 @@ export class GithubService {
     }
 
     if (username) {
+      if (username.indexOf('@') !== -1) {
+        [, workspace] = username.split('@');
+      }
+
       [owner, repo] = username.split('/');
       if (!owner || !repo) {
-        console.warn(`Username must be in the format of \`{owner}/{repository}\``);
+        console.warn(
+          `Username must be in the format of \`[{owner}/{repository}][@{workspace}]\``,
+          username,
+        );
         throw new TerraformError(400);
+      }
+
+      if (repo.indexOf('@') !== -1) {
+        [repo] = repo.split('@');
       }
     }
 
     try {
-      const identity = await this.inferIdentity(password, owner, repo);
+      const identity = await this.inferIdentity(password, owner, repo, workspace);
 
       console.log(
         `Using identity: ${identity.owner}/${identity.repo} [${identity.ownerId}/${identity.repoId}]`,
@@ -77,9 +90,13 @@ export class GithubService {
     auth: string,
     owner?: string,
     repo?: string,
+    workspace?: string,
   ): Promise<Identity> => {
     console.log(
-      `Inferring identity (auth: ${auth.substring(0, 10)} owner: ${owner}, repo: ${repo})`,
+      `Inferring identity (auth: ${auth.substring(
+        0,
+        10,
+      )} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
     );
 
     const octokit = new Octokit({ auth });
@@ -100,6 +117,7 @@ export class GithubService {
         ownerId: repository.owner.id,
         repo: repository.name,
         repoId: repository.id,
+        workspace: workspace || 'default',
         token: auth,
       };
     }
@@ -115,6 +133,7 @@ export class GithubService {
         ownerId: repository.owner.id,
         repo: repository.name,
         repoId: repository.id,
+        workspace: workspace || 'default',
         token: auth,
       };
     }
@@ -128,6 +147,7 @@ export class GithubService {
         ownerId: data.data.owner.id,
         repo: data.data.name,
         repoId: data.data.id,
+        workspace: workspace || 'default',
         token: auth,
       };
     }

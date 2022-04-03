@@ -13,10 +13,11 @@ export const stateLockRequest = Joi.object({
 export const stateLock = {
   pk: Joi.string().required(), // github_${orgId}
   sk: Joi.string()
-    .regex(/lock_(.*)_(.*)/) // lock_${repoId}_${path}
+    .regex(/lock_(.*)_(.*)/) // lock_${repoId}_${workspace}_${path}
     .required(),
   ownerId: Joi.number().required(),
   repoId: Joi.number().required(),
+  workspace: Joi.string().required(),
   owner: Joi.string().required(),
   repo: Joi.string().required(),
   id: Joi.string().required(),

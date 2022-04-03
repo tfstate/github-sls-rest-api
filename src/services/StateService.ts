@@ -31,7 +31,7 @@ export class StateService {
     const [stateLocks] = await this.stateLockModel.model
       .query(StateLockModel.prefix('pk', identity.ownerId))
       .where('sk')
-      .beginsWith(StateLockModel.prefix('sk', identity.repoId))
+      .beginsWith(StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}`))
       .filter('id')
       .eq(id)
       .exec()
@@ -45,8 +45,8 @@ export class StateService {
 
     if (stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.login} for ${identity.owner}/${
-          identity.repo
+        `State is locked by ${identity.login} for ${identity.owner}/${identity.repo} on workspace ${
+          identity.workspace
         }. Lock expires at approximately ${moment(stateLock.attrs.expires * 1000).toISOString()}`,
       );
       throw new TerraformError(409, stateLock.attrs.request);
@@ -54,11 +54,12 @@ export class StateService {
 
     await this.stateModel.model.update({
       pk: StateModel.prefix('pk', identity.ownerId),
-      sk: StateModel.prefix('sk', identity.repoId),
+      sk: StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
       ownerId: identity.ownerId,
       owner: identity.owner,
       repoId: identity.repoId,
       repo: identity.repo,
+      workspace: identity.workspace,
       encryptedState,
     });
   };
@@ -66,7 +67,7 @@ export class StateService {
   public getState = async (identity: Identity): Promise<any> => {
     const state = await this.stateModel.model.get(
       StateModel.prefix('pk', identity.ownerId),
-      StateModel.prefix('sk', identity.repoId),
+      StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
     );
 
     if (!state) {
@@ -87,13 +88,16 @@ export class StateService {
 
     const stateLock = await this.stateLockModel.model.get(
       StateLockModel.prefix('pk', identity.ownerId),
-      StateLockModel.prefix('sk', `${identity.repoId}_${stateLockRequest.Path}`),
+      StateLockModel.prefix(
+        'sk',
+        `${identity.repoId}_${identity.workspace}_${stateLockRequest.Path}`,
+      ),
     );
 
     if (stateLock && stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.login} for ${identity.owner}/${
-          identity.repo
+        `State is locked by ${identity.login} for ${identity.owner}/${identity.repo} on workspace ${
+          identity.workspace
         }. Lock expires at approximately ${moment(stateLock.attrs.expires * 1000).toISOString()}`,
       );
       throw new TerraformError(409, stateLock.attrs.request);
@@ -102,11 +106,15 @@ export class StateService {
     // TODO Catch overwrite exception
     await this.stateLockModel.model.create({
       pk: StateLockModel.prefix('pk', identity.ownerId),
-      sk: StateLockModel.prefix('sk', `${identity.repoId}_${stateLockRequest.Path}`),
+      sk: StateLockModel.prefix(
+        'sk',
+        `${identity.repoId}_${identity.workspace}_${stateLockRequest.Path}`,
+      ),
       ownerId: identity.ownerId,
       owner: identity.owner,
       repoId: identity.repoId,
       repo: identity.repo,
+      workspace: identity.workspace,
       id: stateLockRequest.ID,
       path: stateLockRequest.Path,
       lockedBy,
@@ -115,7 +123,6 @@ export class StateService {
     });
   };
 
-  // TODO Try this with the UNLOCK METHOD
   public unlockState = async (
     identity: Identity,
     stateLockRequest: StateLockRequest,
@@ -125,7 +132,7 @@ export class StateService {
     const [stateLocks] = await this.stateLockModel.model
       .query(StateLockModel.prefix('pk', identity.ownerId))
       .where('sk')
-      .beginsWith(StateLockModel.prefix('sk', identity.repoId))
+      .beginsWith(StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}`))
       .filter('id')
       .eq(stateLockRequest.ID)
       .exec()
@@ -133,7 +140,7 @@ export class StateService {
 
     if (!stateLocks || !stateLocks.Count) {
       console.log(
-        `No state locks for ${identity.ownerId}/${identity.repoId} with id ${stateLockRequest.ID}`,
+        `No state locks for ${identity.ownerId}/${identity.repoId} on workspace ${identity.workspace} with id ${stateLockRequest.ID}`,
       );
       return;
     }
@@ -142,8 +149,8 @@ export class StateService {
 
     if (stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.login} for ${identity.owner}/${
-          identity.repo
+        `State is locked by ${identity.login} for ${identity.owner}/${identity.repo} on workspace ${
+          identity.workspace
         }. Lock expires at approximately ${moment(stateLock.attrs.expires * 1000).toISOString()}`,
       );
       throw new TerraformError(409, stateLock.attrs.request);
