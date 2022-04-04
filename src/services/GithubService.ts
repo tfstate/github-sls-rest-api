@@ -95,10 +95,7 @@ export class GithubService {
     workspace?: string,
   ): Promise<Identity> => {
     console.log(
-      `Inferring identity (auth: ${auth.substring(
-        0,
-        10,
-      )} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
+      `Inferring identity (auth: ${auth} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
     );
 
     const octokit = new Octokit({ auth });
