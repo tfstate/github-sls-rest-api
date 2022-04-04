@@ -45,9 +45,11 @@ export class StateService {
 
     if (stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.login} for ${identity.owner}/${identity.repo} on workspace ${
-          identity.workspace
-        }. Lock expires at approximately ${moment(stateLock.attrs.expires * 1000).toISOString()}`,
+        `State is locked by ${identity.meta.name} for ${identity.owner}/${
+          identity.repo
+        } on workspace ${identity.workspace}. Lock expires at approximately ${moment(
+          stateLock.attrs.expires * 1000,
+        ).toISOString()}`,
       );
       throw new TerraformError(409, stateLock.attrs.request);
     }
@@ -96,9 +98,11 @@ export class StateService {
 
     if (stateLock && stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.login} for ${identity.owner}/${identity.repo} on workspace ${
-          identity.workspace
-        }. Lock expires at approximately ${moment(stateLock.attrs.expires * 1000).toISOString()}`,
+        `State is locked by ${identity.meta.name} for ${identity.owner}/${
+          identity.repo
+        } on workspace ${identity.workspace}. Lock expires at approximately ${moment(
+          stateLock.attrs.expires * 1000,
+        ).toISOString()}`,
       );
       throw new TerraformError(409, stateLock.attrs.request);
     }
@@ -149,9 +153,11 @@ export class StateService {
 
     if (stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.login} for ${identity.owner}/${identity.repo} on workspace ${
-          identity.workspace
-        }. Lock expires at approximately ${moment(stateLock.attrs.expires * 1000).toISOString()}`,
+        `State is locked by ${identity.meta.name} for ${identity.owner}/${
+          identity.repo
+        } on workspace ${identity.workspace}. Lock expires at approximately ${moment(
+          stateLock.attrs.expires * 1000,
+        ).toISOString()}`,
       );
       throw new TerraformError(409, stateLock.attrs.request);
     }

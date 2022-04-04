@@ -3,13 +3,15 @@ import { Octokit } from '@octokit/rest';
 import { TerraformError } from '../interfaces/errors';
 
 export type Identity = {
-  login: string;
   owner: string;
   ownerId: number;
   repo: string;
   repoId: number;
   workspace: string;
   token: string;
+  meta: {
+    name: string;
+  };
 };
 
 const lowerCase = (str?: string): string | undefined => {
@@ -79,7 +81,7 @@ export class GithubService {
       return identity;
     } catch (e) {
       if (e instanceof Error) {
-        console.warn(`Error inferring identity`, e.message);
+        console.warn(`Error inferring identity`, e);
         throw new TerraformError(401);
       }
       throw e;
@@ -107,20 +109,25 @@ export class GithubService {
       : [];
 
     const repository = repositories.length === 1 ? repositories[0] : undefined;
+    let name = repository ? repository.full_name : undefined;
 
-    const login = auth.startsWith('ghs_')
-      ? (await octokit.apps.getAuthenticated()).data.name
-      : (await octokit.users.getAuthenticated()).data.login;
+    if (!name) {
+      name = auth.startsWith('ghs_')
+        ? (await octokit.apps.getAuthenticated()).data.name
+        : (await octokit.users.getAuthenticated()).data.login;
+    }
 
     if (repository && !owner && !repo) {
       return {
-        login,
         owner: repository.owner.login,
         ownerId: repository.owner.id,
         repo: repository.name,
         repoId: repository.id,
         workspace: workspace || 'default',
         token: auth,
+        meta: {
+          name,
+        },
       };
     }
 
@@ -130,13 +137,15 @@ export class GithubService {
       lowerCase(repo) === lowerCase(repository.name)
     ) {
       return {
-        login,
         owner: repository.owner.login,
         ownerId: repository.owner.id,
         repo: repository.name,
         repoId: repository.id,
         workspace: workspace || 'default',
         token: auth,
+        meta: {
+          name,
+        },
       };
     }
 
@@ -144,13 +153,15 @@ export class GithubService {
       console.log(`Fetching repository ${owner}/${repo}`);
       const data = await octokit.repos.get({ owner, repo });
       return {
-        login,
         owner: data.data.owner.login,
         ownerId: data.data.owner.id,
         repo: data.data.name,
         repoId: data.data.id,
         workspace: workspace || 'default',
         token: auth,
+        meta: {
+          name,
+        },
       };
     }
 
