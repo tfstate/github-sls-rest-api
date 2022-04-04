@@ -1,7 +1,7 @@
 import { HttpRequest } from '@scaffoldly/serverless-util';
 import { Octokit } from '@octokit/rest';
 import { TerraformError } from '../interfaces/errors';
-import { Identity, StateLockRequest } from '../models/interfaces';
+import { Identity } from '../models/interfaces';
 import crypto from 'crypto';
 import { IdentityModel } from '../models/IdentityModel';
 
@@ -24,10 +24,7 @@ export class GithubService {
     this.identityModel = new IdentityModel();
   }
 
-  public getIdentity = async (
-    request: HttpRequest,
-    stateLockRequest?: StateLockRequest,
-  ): Promise<IdentityWithToken> => {
+  public getIdentity = async (request: HttpRequest): Promise<IdentityWithToken> => {
     const { authorization } = request.headers;
     if (!authorization) {
       throw new TerraformError(401);
@@ -76,7 +73,7 @@ export class GithubService {
     }
 
     try {
-      const identity = await this.inferIdentity(password, owner, repo, workspace, stateLockRequest);
+      const identity = await this.inferIdentity(password, owner, repo, workspace);
 
       console.log(
         `Using identity: ${identity.owner}/${identity.repo} [${identity.ownerId}/${identity.repoId}]`,
@@ -97,23 +94,19 @@ export class GithubService {
     owner?: string,
     repo?: string,
     workspace?: string,
-    stateLockRequest?: StateLockRequest,
   ): Promise<Identity> => {
-    console.log(
-      `Inferring identity (auth: ${auth.substring(
-        0,
-        10,
-      )} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
-    );
-
     const tokenSha = crypto.createHash('sha256').update(auth).digest().toString('base64');
+
+    console.log(
+      `Inferring identity (auth: ${auth} sha: ${tokenSha} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
+    );
 
     const storedIdentity = await this.identityModel.model.get(
       IdentityModel.prefix('pk', tokenSha),
       IdentityModel.prefix('sk'),
     );
 
-    if (storedIdentity && stateLockRequest && stateLockRequest.Operation === 'OperationTypeApply') {
+    if (storedIdentity) {
       // Terraform planfiles contain backend configurations from plan operations
       // Return the previously known identy from the plan operation
       console.log(`Found previously known identity (sha: ${tokenSha})`);
