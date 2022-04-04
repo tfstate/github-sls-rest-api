@@ -1,4 +1,4 @@
-import { HttpError, HttpRequest } from '@scaffoldly/serverless-util';
+import { HttpRequest } from '@scaffoldly/serverless-util';
 import { Octokit } from '@octokit/rest';
 import { TerraformError } from '../interfaces/errors';
 
@@ -24,7 +24,7 @@ export class GithubService {
   public getIdentity = async (request: HttpRequest): Promise<Identity> => {
     const { authorization } = request.headers;
     if (!authorization) {
-      throw new HttpError(401, 'Unauthorized');
+      throw new TerraformError(401);
     }
 
     const [method, token] = authorization.split(' ');
@@ -101,18 +101,22 @@ export class GithubService {
 
     const octokit = new Octokit({ auth });
 
-    const { data: authenticated } = await octokit.users.getAuthenticated();
-
     const repositories =
       auth.startsWith('ghs_') && !owner && !repo
         ? (await octokit.paginate(octokit.apps.listReposAccessibleToInstallation)).repositories
         : [];
 
     const repository = repositories.length === 1 ? repositories[0] : undefined;
+    let login = repositories.length === 1 ? repositories[0].full_name : undefined;
+
+    if (!login) {
+      const { data: authenticated } = await octokit.users.getAuthenticated();
+      login = authenticated.login;
+    }
 
     if (repository && !owner && !repo) {
       return {
-        login: authenticated.login,
+        login,
         owner: repository.owner.login,
         ownerId: repository.owner.id,
         repo: repository.name,
@@ -128,7 +132,7 @@ export class GithubService {
       lowerCase(repo) === lowerCase(repository.name)
     ) {
       return {
-        login: authenticated.login,
+        login,
         owner: repository.owner.login,
         ownerId: repository.owner.id,
         repo: repository.name,
@@ -142,7 +146,7 @@ export class GithubService {
       console.log(`Fetching repository ${owner}/${repo}`);
       const data = await octokit.repos.get({ owner, repo });
       return {
-        login: authenticated.login,
+        login,
         owner: data.data.owner.login,
         ownerId: data.data.owner.id,
         repo: data.data.name,
