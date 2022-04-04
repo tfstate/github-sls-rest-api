@@ -1,6 +1,6 @@
 {
   "name": "github-sls-rest-api",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=0.14"
