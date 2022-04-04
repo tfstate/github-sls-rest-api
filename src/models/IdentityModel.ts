@@ -7,18 +7,17 @@ import {
   unmarshallDynamoDBImage,
 } from '@scaffoldly/serverless-util';
 import { StreamRecord } from 'aws-lambda';
-import { StateLock } from './interfaces';
-import { stateLock } from './schemas/StateLock';
+import { Identity } from './interfaces';
+import { identity } from './schemas/Identity';
+const TABLE_SUFFIX = 'identity';
 
-const TABLE_SUFFIX = '';
+export class IdentityModel {
+  public readonly table: Table<Identity>;
 
-export class StateLockModel {
-  public readonly table: Table<StateLock>;
-
-  public readonly model: Model<StateLock>;
+  public readonly model: Model<Identity>;
 
   constructor() {
-    this.table = new Table(TABLE_SUFFIX, SERVICE_NAME, STAGE, stateLock, 'pk', 'sk', [
+    this.table = new Table(TABLE_SUFFIX, SERVICE_NAME, STAGE, identity, 'pk', 'sk', [
       { hashKey: 'sk', rangeKey: 'pk', name: 'sk-pk-index', type: 'global' },
     ]);
 
@@ -30,11 +29,11 @@ export class StateLockModel {
     if (col === 'pk') {
       return `github_${value || ''}`;
     }
-    return `statelock_${value || ''}`;
+    return `identity`;
   };
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  static isState = (record: StreamRecord): boolean => {
+  static isIdentity = (record: StreamRecord): boolean => {
     if (!record) {
       return false;
     }
@@ -48,8 +47,8 @@ export class StateLockModel {
     const { pk, sk } = check;
 
     try {
-      Joi.assert(pk, stateLock.pk);
-      Joi.assert(sk, stateLock.sk);
+      Joi.assert(pk, identity.pk);
+      Joi.assert(sk, identity.sk);
     } catch (e) {
       return false;
     }

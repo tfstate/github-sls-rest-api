@@ -1,17 +1,12 @@
 import { HttpRequest } from '@scaffoldly/serverless-util';
 import { Octokit } from '@octokit/rest';
 import { TerraformError } from '../interfaces/errors';
+import { Identity, StateLockRequest } from '../models/interfaces';
+import crypto from 'crypto';
+import { IdentityModel } from '../models/IdentityModel';
 
-export type Identity = {
-  owner: string;
-  ownerId: number;
-  repo: string;
-  repoId: number;
-  workspace: string;
+export type IdentityWithToken = Identity & {
   token: string;
-  meta: {
-    name: string;
-  };
 };
 
 const lowerCase = (str?: string): string | undefined => {
@@ -23,7 +18,16 @@ const lowerCase = (str?: string): string | undefined => {
 };
 
 export class GithubService {
-  public getIdentity = async (request: HttpRequest): Promise<Identity> => {
+  identityModel: IdentityModel;
+
+  constructor() {
+    this.identityModel = new IdentityModel();
+  }
+
+  public getIdentity = async (
+    request: HttpRequest,
+    stateLockRequest?: StateLockRequest,
+  ): Promise<IdentityWithToken> => {
     const { authorization } = request.headers;
     if (!authorization) {
       throw new TerraformError(401);
@@ -72,13 +76,13 @@ export class GithubService {
     }
 
     try {
-      const identity = await this.inferIdentity(password, owner, repo, workspace);
+      const identity = await this.inferIdentity(password, owner, repo, workspace, stateLockRequest);
 
       console.log(
         `Using identity: ${identity.owner}/${identity.repo} [${identity.ownerId}/${identity.repoId}]`,
       );
 
-      return identity;
+      return { ...identity, token: password };
     } catch (e) {
       if (e instanceof Error) {
         console.warn(`Error inferring identity`, e);
@@ -93,10 +97,28 @@ export class GithubService {
     owner?: string,
     repo?: string,
     workspace?: string,
+    stateLockRequest?: StateLockRequest,
   ): Promise<Identity> => {
     console.log(
-      `Inferring identity (auth: ${auth} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
+      `Inferring identity (auth: ${auth.substring(
+        0,
+        10,
+      )} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
     );
+
+    const tokenSha = crypto.createHash('sha256').update(auth).digest().toString('base64');
+
+    const storedIdentity = await this.identityModel.model.get(
+      IdentityModel.prefix('pk', tokenSha),
+      IdentityModel.prefix('sk'),
+    );
+
+    if (storedIdentity && stateLockRequest && stateLockRequest.Operation === 'OperationTypeApply') {
+      // Terraform planfiles contain backend configurations from plan operations
+      // Return the previously known identy from the plan operation
+      console.log(`Found previously known identity (sha: ${tokenSha})`);
+      return storedIdentity.attrs;
+    }
 
     const octokit = new Octokit({ auth });
 
@@ -114,14 +136,18 @@ export class GithubService {
         : (await octokit.users.getAuthenticated()).data.login;
     }
 
+    let identity: Identity | undefined;
+
     if (repository && !owner && !repo) {
-      return {
+      identity = {
+        pk: IdentityModel.prefix('pk', tokenSha),
+        sk: IdentityModel.prefix('sk'),
         owner: repository.owner.login,
         ownerId: repository.owner.id,
         repo: repository.name,
         repoId: repository.id,
         workspace: workspace || 'default',
-        token: auth,
+        tokenSha,
         meta: {
           name,
         },
@@ -129,37 +155,48 @@ export class GithubService {
     }
 
     if (
+      !identity &&
       repository &&
       lowerCase(owner) === lowerCase(repository.owner.login) &&
       lowerCase(repo) === lowerCase(repository.name)
     ) {
-      return {
+      identity = {
+        pk: IdentityModel.prefix('pk', tokenSha),
+        sk: IdentityModel.prefix('sk'),
         owner: repository.owner.login,
         ownerId: repository.owner.id,
         repo: repository.name,
         repoId: repository.id,
         workspace: workspace || 'default',
-        token: auth,
+        tokenSha,
         meta: {
           name,
         },
       };
     }
 
-    if (owner && repo) {
+    if (!identity && owner && repo) {
       console.log(`Fetching repository ${owner}/${repo}`);
       const data = await octokit.repos.get({ owner, repo });
-      return {
+      identity = {
+        pk: IdentityModel.prefix('pk', tokenSha),
+        sk: IdentityModel.prefix('sk'),
         owner: data.data.owner.login,
         ownerId: data.data.owner.id,
         repo: data.data.name,
         repoId: data.data.id,
         workspace: workspace || 'default',
-        token: auth,
+        tokenSha,
         meta: {
           name,
         },
       };
+    }
+
+    if (identity) {
+      // Terraform Stores the backend identity in the planfile, store a hash of the token to use later
+      const saved = await this.identityModel.model.create(identity);
+      return saved.attrs;
     }
 
     console.warn(`Unable to infer repository (auth: ${auth.substring(0, 10)}`);

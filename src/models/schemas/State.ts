@@ -2,7 +2,9 @@ import Joi from 'joi';
 import { encryptedFieldSchema } from './EncryptedField';
 
 export const state = {
-  pk: Joi.string().required(), // github_${ownerId}
+  pk: Joi.string()
+    .regex(/github_(.*)/) // github_${ownerId}
+    .required(),
   sk: Joi.string()
     .regex(/state_(.*)/) // state_${repoId}_${workspace}
     .required(),

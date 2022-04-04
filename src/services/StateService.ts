@@ -1,12 +1,12 @@
 import { StateLockModel } from '../models/StateLockModel';
 import { StateModel } from '../models/StateModel';
 import { KmsService } from './aws/kms/KmsService';
-import { Identity } from './GithubService';
 import { EncryptionService } from './interfaces/EncryptionService';
 import crypto from 'crypto';
 import moment from 'moment';
 import { StateLockRequest } from '../models/interfaces';
 import { TerraformError } from '../interfaces/errors';
+import { IdentityWithToken } from './GithubService';
 
 export class StateService {
   encryptionService: EncryptionService;
@@ -22,7 +22,7 @@ export class StateService {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  public saveState = async (identity: Identity, id: string, state: any): Promise<void> => {
+  public saveState = async (identity: IdentityWithToken, id: string, state: any): Promise<void> => {
     const stateBase64 = Buffer.from(JSON.stringify(state), 'utf8').toString('base64');
     const encryptedState = await this.encryptionService.encrypt(stateBase64);
 
@@ -66,7 +66,7 @@ export class StateService {
     });
   };
 
-  public getState = async (identity: Identity): Promise<any> => {
+  public getState = async (identity: IdentityWithToken): Promise<any> => {
     const state = await this.stateModel.model.get(
       StateModel.prefix('pk', identity.ownerId),
       StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
@@ -82,7 +82,7 @@ export class StateService {
   };
 
   public lockState = async (
-    identity: Identity,
+    identity: IdentityWithToken,
     stateLockRequest: StateLockRequest,
     duration = 30,
   ): Promise<void> => {
@@ -128,7 +128,7 @@ export class StateService {
   };
 
   public unlockState = async (
-    identity: Identity,
+    identity: IdentityWithToken,
     stateLockRequest: StateLockRequest,
   ): Promise<void> => {
     const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');

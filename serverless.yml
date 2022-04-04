@@ -1,10 +1,10 @@
 service: ${file(serverless.config.js):serviceName}
 
 frameworkVersion: 2.57.0
-variablesResolutionMode: "20210326"
+variablesResolutionMode: '20210326'
 configValidationMode: off
 disabledDeprecations:
-  - "*"
+  - '*'
 
 plugins:
   - serverless-bundle
@@ -16,7 +16,7 @@ plugins:
 provider:
   name: aws
   runtime: nodejs14.x
-  lambdaHashingVersion: "20201221"
+  lambdaHashingVersion: '20201221'
   cfnRole: arn:${env:AWS_PARTITION, ""}:iam::${env:AWS_ACCOUNT_ID, ""}:role/${self:service}-cloudformation
   stage: ${opt:stage, "local"}
   logRetentionInDays: 1
@@ -55,15 +55,13 @@ functions:
           path: /{proxy+}
           method: options
 
-
 resources:
   Resources:
     Secret:
       Type: AWS::SecretsManager::Secret
-      Properties: 
+      Properties:
         Name: lambda/${opt:stage, "local"}/${self:service}
-        SecretString: 
-          "{}"
+        SecretString: '{}'
 
     Table:
       Type: AWS::DynamoDB::Table
@@ -99,6 +97,39 @@ resources:
           SSEEnabled: true
         BillingMode: PAY_PER_REQUEST
 
+    IdentityTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${opt:stage, "local"}-${self:service}-identity
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: sk-pk-index
+            KeySchema:
+              - AttributeName: sk
+                KeyType: HASH
+              - AttributeName: pk
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TimeToLiveSpecification:
+          AttributeName: expires
+          Enabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        SSESpecification:
+          SSEEnabled: true
+        BillingMode: PAY_PER_REQUEST
 
 custom:
   serverless-offline:
@@ -114,7 +145,6 @@ custom:
       - from: 'public/*'
         to: './'
 
-
   dynamodb:
     stages:
       - local
@@ -124,4 +154,3 @@ custom:
       migrate: true
   serverless-offline-dynamodb-streams:
     endpoint: http://0.0.0.0:8100
-
