@@ -101,18 +101,16 @@ export class GithubService {
 
     const octokit = new Octokit({ auth });
 
-    const repositories =
-      auth.startsWith('ghs_') && !owner && !repo
-        ? (await octokit.paginate(octokit.apps.listReposAccessibleToInstallation)).repositories
-        : [];
+    // Server-to-server tokens from GH Actions are permitted on a single repository
+    const repositories = auth.startsWith('ghs_')
+      ? (await octokit.apps.listReposAccessibleToInstallation()).data.repositories
+      : [];
 
     const repository = repositories.length === 1 ? repositories[0] : undefined;
-    let login = repositories.length === 1 ? repositories[0].full_name : undefined;
 
-    if (!login) {
-      const { data: authenticated } = await octokit.users.getAuthenticated();
-      login = authenticated.login;
-    }
+    const login = auth.startsWith('ghs_')
+      ? (await octokit.apps.getAuthenticated()).data.name
+      : (await octokit.users.getAuthenticated()).data.login;
 
     if (repository && !owner && !repo) {
       return {
