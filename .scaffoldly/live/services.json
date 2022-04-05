@@ -10,11 +10,12 @@
     "api-id": "6y5dgy46hf",
     "api-resource-id": "h30pmz3pa7",
     "base-url": "https://api.tfstate.dev/github",
+    "bucket": "live-github-sls-rest-api20220405142407327000000002",
+    "bucket-topic-arn": "arn:aws:sns:us-east-1:592292130354:live-github-sls-rest-api-s3",
     "role-arn": "arn:aws:iam::592292130354:role/github-sls-rest-api-live",
     "service-name": "github-sls-rest-api",
     "service-slug": "github",
     "topic-arn": "arn:aws:sns:us-east-1:592292130354:live-github-sls-rest-api",
-    "topic-arn-s3": "arn:aws:sns:us-east-1:592292130354:live-github-sls-rest-api-s3",
     "websocket-api-id": null,
     "websocket-url": null
   }
