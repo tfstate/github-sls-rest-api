@@ -13,6 +13,7 @@
   "service-name": "github-sls-rest-api",
   "service-slug": "github",
   "topic-arn": "arn:aws:sns:us-east-1:592292130354:nonlive-github-sls-rest-api",
+  "topic-arn-s3": "arn:aws:sns:us-east-1:592292130354:nonlive-github-sls-rest-api-s3",
   "websocket-api-id": null,
   "websocket-url": null,
   "application-name": "github-sls-rest-api",
