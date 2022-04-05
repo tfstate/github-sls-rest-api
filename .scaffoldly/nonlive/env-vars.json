@@ -1,9 +1,13 @@
 {
   "api-gateway-domain": "api-nonlive.tfstate.dev",
+  "api-gateway-websocket": "false",
+  "api-gateway-websocket-domain": null,
   "stage-domain": "tfstate.dev",
   "subdomain": "api",
   "subdomain-suffix": "nonlive",
   "zone-id": "Z0754609150R99BSVKDUQ",
+  "key-alias": "alias/nonlive",
+  "key-id": "ab356c75-5a89-4363-9186-921ed12e0d2c",
   "mail-domain": "slyses-nonlive.tfstate.dev",
   "noreply-address": "no-reply@slyses-nonlive.tfstate.dev",
   "api-id": "75zwl9dq4c",
