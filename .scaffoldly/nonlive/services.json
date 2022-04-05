@@ -10,7 +10,11 @@
     "api-id": "75zwl9dq4c",
     "api-resource-id": "g9jdpe3fba",
     "base-url": "https://api-nonlive.tfstate.dev/github",
+    "role-arn": "arn:aws:iam::592292130354:role/github-sls-rest-api-nonlive",
     "service-name": "github-sls-rest-api",
-    "service-slug": "github"
+    "service-slug": "github",
+    "topic-arn": "arn:aws:sns:us-east-1:592292130354:nonlive-github-sls-rest-api",
+    "websocket-api-id": null,
+    "websocket-url": null
   }
 }

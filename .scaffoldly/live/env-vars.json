@@ -9,8 +9,12 @@
   "api-id": "6y5dgy46hf",
   "api-resource-id": "h30pmz3pa7",
   "base-url": "https://api.tfstate.dev/github",
+  "role-arn": "arn:aws:iam::592292130354:role/github-sls-rest-api-live",
   "service-name": "github-sls-rest-api",
   "service-slug": "github",
+  "topic-arn": "arn:aws:sns:us-east-1:592292130354:live-github-sls-rest-api",
+  "websocket-api-id": null,
+  "websocket-url": null,
   "application-name": "github-sls-rest-api",
   "organization-name": "tfstate"
 }
