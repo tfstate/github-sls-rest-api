@@ -1,5 +1,12 @@
 import Joi from 'joi';
-import { encryptedFieldSchema } from './EncryptedField';
+
+export const s3Meta = Joi.object({
+  bucket: Joi.string().required(),
+  key: Joi.string().required(),
+  etag: Joi.string().required(),
+  location: Joi.string().required(),
+  kmsKeyId: Joi.string().required(),
+}).label('S3Meta');
 
 export const state = {
   pk: Joi.string()
@@ -13,7 +20,7 @@ export const state = {
   workspace: Joi.string().required(),
   owner: Joi.string().required(),
   repo: Joi.string().required(),
-  encryptedState: encryptedFieldSchema.required(),
+  s3Meta: s3Meta.required(),
 };
 
 export const stateSchema = Joi.object(state).label('State');

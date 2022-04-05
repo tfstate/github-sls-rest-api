@@ -7,6 +7,8 @@ import moment from 'moment';
 import { StateLockRequest } from '../models/interfaces';
 import { TerraformError } from '../interfaces/errors';
 import { IdentityWithToken } from './GithubService';
+import { S3 } from '@scaffoldly/serverless-util';
+import { env } from '../env';
 
 export class StateService {
   encryptionService: EncryptionService;
@@ -23,9 +25,6 @@ export class StateService {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public saveState = async (identity: IdentityWithToken, id: string, state: any): Promise<void> => {
-    const stateBase64 = Buffer.from(JSON.stringify(state), 'utf8').toString('base64');
-    const encryptedState = await this.encryptionService.encrypt(stateBase64);
-
     const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');
 
     const [stateLocks] = await this.stateLockModel.model
@@ -54,7 +53,18 @@ export class StateService {
       throw new TerraformError(409, stateLock.attrs.request);
     }
 
-    await this.stateModel.model.update({
+    const s3 = await S3();
+    const upload = await s3
+      .upload({
+        Bucket: env.bucket,
+        Key: `${identity.ownerId}/${identity.repoId}/${identity.workspace}.tfstate`,
+        ServerSideEncryption: 'aws:kms',
+        SSEKMSKeyId: env['key-id'],
+        Body: state,
+      })
+      .promise();
+
+    await this.stateModel.model.create({
       pk: StateModel.prefix('pk', identity.ownerId),
       sk: StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
       ownerId: identity.ownerId,
@@ -62,7 +72,13 @@ export class StateService {
       repoId: identity.repoId,
       repo: identity.repo,
       workspace: identity.workspace,
-      encryptedState,
+      s3Meta: {
+        bucket: upload.Bucket,
+        key: upload.Key,
+        etag: upload.ETag,
+        location: upload.Location,
+        kmsKeyId: env['key-id'],
+      },
     });
   };
 
@@ -76,9 +92,13 @@ export class StateService {
       return null;
     }
 
-    const stateBase64 = await this.encryptionService.decrypt(state.attrs.encryptedState);
+    const { s3Meta } = state.attrs;
 
-    return JSON.parse(Buffer.from(stateBase64, 'base64').toString('utf8'));
+    const s3 = await S3();
+
+    const download = await s3.getObject({ Bucket: s3Meta.bucket, Key: s3Meta.key }).promise();
+
+    return download.Body;
   };
 
   public lockState = async (
