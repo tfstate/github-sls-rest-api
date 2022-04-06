@@ -60,7 +60,7 @@ export class StateService {
         Key: `${identity.ownerId}/${identity.repoId}/${identity.workspace}.tfstate`,
         ServerSideEncryption: 'aws:kms',
         SSEKMSKeyId: env['key-id'],
-        Body: state,
+        Body: JSON.stringify(state),
       })
       .promise();
 
@@ -98,7 +98,13 @@ export class StateService {
 
     const download = await s3.getObject({ Bucket: s3Meta.bucket, Key: s3Meta.key }).promise();
 
-    return download.Body;
+    const { Body } = download;
+
+    if (!Body) {
+      return null;
+    }
+
+    return JSON.parse(Body.toString());
   };
 
   public lockState = async (
