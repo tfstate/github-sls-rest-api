@@ -1,4 +1,17 @@
 {
+  "auth2-sls-rest-api": {
+    "api-id": "099xf5nbqk",
+    "api-resource-id": "kt7qr1zgn1",
+    "base-url": "https://api-nonlive.tfstate.dev/auth2",
+    "bucket": "nonlive-auth2-sls-rest-api20220406033230672500000001",
+    "bucket-topic-arn": "arn:aws:sns:us-east-1:592292130354:nonlive-auth2-sls-rest-api-s3",
+    "role-arn": "arn:aws:iam::592292130354:role/auth2-sls-rest-api-nonlive",
+    "service-name": "auth2-sls-rest-api",
+    "service-slug": "auth2",
+    "topic-arn": "arn:aws:sns:us-east-1:592292130354:nonlive-auth2-sls-rest-api",
+    "websocket-api-id": null,
+    "websocket-url": null
+  },
   "auth-sls-rest-api": {
     "api-id": "hbjxolg96l",
     "api-resource-id": "el756beg20",

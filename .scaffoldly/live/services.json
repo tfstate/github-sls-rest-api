@@ -1,4 +1,17 @@
 {
+  "auth2-sls-rest-api": {
+    "api-id": "8q6rzrjbfe",
+    "api-resource-id": "3zgi9r8e58",
+    "base-url": "https://api.tfstate.dev/auth2",
+    "bucket": "live-auth2-sls-rest-api20220406033230719000000002",
+    "bucket-topic-arn": "arn:aws:sns:us-east-1:592292130354:live-auth2-sls-rest-api-s3",
+    "role-arn": "arn:aws:iam::592292130354:role/auth2-sls-rest-api-live",
+    "service-name": "auth2-sls-rest-api",
+    "service-slug": "auth2",
+    "topic-arn": "arn:aws:sns:us-east-1:592292130354:live-auth2-sls-rest-api",
+    "websocket-api-id": null,
+    "websocket-url": null
+  },
   "auth-sls-rest-api": {
     "api-id": "g5rxxul2ma",
     "api-resource-id": "gw01ym9mfh",
