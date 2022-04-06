@@ -21,7 +21,6 @@
   "topic-arn": "arn:aws:sns:us-east-1:592292130354:live-github-sls-rest-api",
   "websocket-api-id": null,
   "websocket-url": null,
-  "auth2-topic-arn": "arn:aws:sns:us-east-1:592292130354:live-auth2-sls-rest-api",
   "application-name": "github-sls-rest-api",
   "organization-name": "tfstate"
 }
