@@ -94,9 +94,12 @@ export class StateService {
 
     const { s3Meta } = state.attrs;
 
-    const s3 = await S3();
+    console.log(`Fetching state from S3`, s3Meta);
 
+    const s3 = await S3();
     const download = await s3.getObject({ Bucket: s3Meta.bucket, Key: s3Meta.key }).promise();
+
+    console.log(`!!! download`, download);
 
     const { Body } = download;
 
