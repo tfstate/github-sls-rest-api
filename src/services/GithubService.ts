@@ -101,6 +101,7 @@ export class GithubService {
       `Inferring identity (auth: ${auth} sha: ${tokenSha} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
     );
 
+    // TODO Expire stored identities
     const storedIdentity = await this.identityModel.model.get(
       IdentityModel.prefix('pk', tokenSha),
       IdentityModel.prefix('sk'),
@@ -110,7 +111,7 @@ export class GithubService {
       // Terraform planfiles contain backend configurations from plan operations
       // Return the previously known identy from the plan operation
       console.log(`Found previously known identity (sha: ${tokenSha})`);
-      return storedIdentity.attrs;
+      return { ...storedIdentity.attrs, workspace: workspace || 'default' };
     }
 
     const octokit = new Octokit({ auth });

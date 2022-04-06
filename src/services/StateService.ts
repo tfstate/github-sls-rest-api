@@ -83,12 +83,24 @@ export class StateService {
   };
 
   public getState = async (identity: IdentityWithToken): Promise<any> => {
+    console.log(`!!! pk search`, StateModel.prefix('pk', identity.ownerId));
+    console.log(
+      `!!! sk search`,
+      StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
+    );
+
     const state = await this.stateModel.model.get(
       StateModel.prefix('pk', identity.ownerId),
       StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
     );
 
     if (!state) {
+      console.warn(
+        `State not found (pk: ${StateModel.prefix('pk', identity.ownerId)} sk: ${StateModel.prefix(
+          'sk',
+          `${identity.repoId}_${identity.workspace}`,
+        )})`,
+      );
       return null;
     }
 
@@ -104,6 +116,7 @@ export class StateService {
     const { Body } = download;
 
     if (!Body) {
+      console.warn(`State not found in S3`);
       return null;
     }
 
