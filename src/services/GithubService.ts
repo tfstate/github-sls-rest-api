@@ -123,10 +123,16 @@ export class GithubService {
     const repository = repositories.length === 1 ? repositories[0] : undefined;
     let name = repository ? repository.full_name : undefined;
 
+    if (!name && !auth.startsWith('ghs_')) {
+      name = (await octokit.users.getAuthenticated()).data.login;
+    }
+
+    if (!name && (owner || repo)) {
+      name = `${owner}/${repo}`;
+    }
+
     if (!name) {
-      name = auth.startsWith('ghs_')
-        ? (await octokit.apps.getAuthenticated()).data.name
-        : (await octokit.users.getAuthenticated()).data.login;
+      name = 'unknown';
     }
 
     let identity: Identity | undefined;
