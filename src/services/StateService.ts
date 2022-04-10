@@ -83,12 +83,6 @@ export class StateService {
   };
 
   public getState = async (identity: IdentityWithToken): Promise<any> => {
-    console.log(`!!! pk search`, StateModel.prefix('pk', identity.ownerId));
-    console.log(
-      `!!! sk search`,
-      StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
-    );
-
     const state = await this.stateModel.model.get(
       StateModel.prefix('pk', identity.ownerId),
       StateModel.prefix('sk', `${identity.repoId}_${identity.workspace}`),
@@ -110,8 +104,6 @@ export class StateService {
 
     const s3 = await S3();
     const download = await s3.getObject({ Bucket: s3Meta.bucket, Key: s3Meta.key }).promise();
-
-    console.log(`!!! download`, download);
 
     const { Body } = download;
 
