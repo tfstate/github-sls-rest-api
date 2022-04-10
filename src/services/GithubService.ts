@@ -4,7 +4,7 @@ import { TerraformError } from '../interfaces/errors';
 import { Identity } from '../models/interfaces';
 import crypto from 'crypto';
 import { IdentityModel } from '../models/IdentityModel';
-import seedrandom from 'seedrandom';
+// import seedrandom from 'seedrandom';
 
 export type IdentityWithToken = Identity & {
   token: string;
@@ -223,16 +223,16 @@ export class GithubService {
     }
 
     // Set IDs as negative so they're clearly out of valid range
-    const ownerId = seedrandom(host).int32() * -1;
-    const repoId = seedrandom(username).int32() * -1;
+    // const ownerId = seedrandom(host).int32() * -1;
+    // const repoId = seedrandom(username).int32() * -1;
 
     return {
       pk: IdentityModel.prefix('pk', tokenSha),
       sk: IdentityModel.prefix('sk'),
       owner: host,
-      ownerId,
+      ownerId: -1,
       repo: username,
-      repoId,
+      repoId: -1,
       token: who,
       tokenSha: tokenSha,
       workspace: 'default',
