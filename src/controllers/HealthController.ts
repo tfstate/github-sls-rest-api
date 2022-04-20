@@ -3,7 +3,7 @@ import packageJson from '../../package.json';
 
 export type HealthResponse = {
   name: string;
-  healty: boolean;
+  healthy: boolean;
   now: Date;
   version: string;
 };
@@ -15,7 +15,7 @@ export class HealthController extends Controller {
   public async get(): Promise<HealthResponse> {
     return {
       name: packageJson.name,
-      healty: true,
+      healthy: true,
       now: new Date(),
       version: packageJson.version,
     };

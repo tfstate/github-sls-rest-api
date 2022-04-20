@@ -13,7 +13,7 @@ import {
   Tags,
   TsoaResponse,
 } from 'tsoa';
-import { StateLockRequest } from '../models/interfaces';
+import { StateLockRequest } from '../models/interfaces/StateLockRequest';
 import { GithubService } from '../services/GithubService';
 import { StateService } from '../services/StateService';
 
@@ -44,7 +44,8 @@ export class ControllerV1 extends Controller {
     @Body() state: any,
     @Res() res: TsoaResponse<200, void>,
   ): Promise<void> {
-    const identity = await this.githubService.getIdentity(request);
+    const stateLockRequest = await this.stateService.getRequest(id);
+    const identity = await this.githubService.getIdentity(request, stateLockRequest);
     await this.stateService.saveState(identity, id, state);
     const response = res(200);
     return response;
@@ -53,11 +54,12 @@ export class ControllerV1 extends Controller {
   @Put('lock')
   public async lockState(
     @Request() request: HttpRequest,
-    @Body() stateLockRequest: StateLockRequest,
+    @Body() lockRequest: StateLockRequest,
     @Res() res: TsoaResponse<200, boolean>,
   ): Promise<boolean> {
-    const identity = await this.githubService.getIdentity(request);
-    await this.stateService.lockState(identity, stateLockRequest, 30);
+    const stateLockRequest = await this.stateService.saveRequest(lockRequest);
+    const identity = await this.githubService.getIdentity(request, stateLockRequest);
+    await this.stateService.lockState(identity, stateLockRequest);
     const response = res(200, true);
     return response;
   }
@@ -65,10 +67,11 @@ export class ControllerV1 extends Controller {
   @Delete('lock')
   public async unlockState(
     @Request() request: HttpRequest,
-    @Body() stateLockRequest: StateLockRequest,
+    @Body() lockRequest: StateLockRequest,
     @Res() res: TsoaResponse<200, boolean>,
   ): Promise<boolean> {
-    const identity = await this.githubService.getIdentity(request);
+    const stateLockRequest = await this.stateService.getRequest(lockRequest.ID);
+    const identity = await this.githubService.getIdentity(request, stateLockRequest);
     await this.stateService.unlockState(identity, stateLockRequest);
     const response = res(200, true);
     return response;

@@ -1,31 +1,31 @@
 import { StateLockModel } from '../models/StateLockModel';
 import { StateModel } from '../models/StateModel';
-import { KmsService } from './aws/kms/KmsService';
-import { EncryptionService } from './interfaces/EncryptionService';
 import crypto from 'crypto';
-import moment from 'moment';
-import { StateLockRequest } from '../models/interfaces';
 import { TerraformError } from '../interfaces/errors';
 import { IdentityWithToken } from './GithubService';
 import { S3 } from '@scaffoldly/serverless-util';
 import { env } from '../env';
+import { StateLockRequest } from '../models/interfaces/StateLockRequest';
+import { StateLockRequestModel } from '../models/StateLockRequestModel';
 
 export class StateService {
-  encryptionService: EncryptionService;
-
   stateModel: StateModel;
 
   stateLockModel: StateLockModel;
 
+  stateLockRequestModel: StateLockRequestModel;
+
   constructor() {
     this.stateModel = new StateModel();
     this.stateLockModel = new StateLockModel();
-    this.encryptionService = new KmsService();
+    this.stateLockRequestModel = new StateLockRequestModel();
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public saveState = async (identity: IdentityWithToken, id: string, state: any): Promise<void> => {
     const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');
+
+    const stateLockRequest = await this.getRequest(id);
 
     const [stateLocks] = await this.stateLockModel.model
       .query(StateLockModel.prefix('pk', identity.ownerId))
@@ -44,13 +44,9 @@ export class StateService {
 
     if (stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.meta.name} for ${identity.owner}/${
-          identity.repo
-        } on workspace ${identity.workspace}. Lock expires at approximately ${moment(
-          stateLock.attrs.expires * 1000,
-        ).toISOString()}`,
+        `State is locked by ${identity.meta.name} for ${identity.owner}/${identity.repo} on workspace ${identity.workspace}.`,
       );
-      throw new TerraformError(409, stateLock.attrs.request);
+      throw new TerraformError(409, stateLockRequest);
     }
 
     const s3 = await S3();
@@ -118,11 +114,10 @@ export class StateService {
   public lockState = async (
     identity: IdentityWithToken,
     stateLockRequest: StateLockRequest,
-    duration = 30,
   ): Promise<void> => {
     const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');
 
-    const stateLock = await this.stateLockModel.model.get(
+    let stateLock = await this.stateLockModel.model.get(
       StateLockModel.prefix('pk', identity.ownerId),
       StateLockModel.prefix(
         'sk',
@@ -132,17 +127,13 @@ export class StateService {
 
     if (stateLock && stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.meta.name} for ${identity.owner}/${
-          identity.repo
-        } on workspace ${identity.workspace}. Lock expires at approximately ${moment(
-          stateLock.attrs.expires * 1000,
-        ).toISOString()}`,
+        `State is locked by ${identity.meta.name} for ${identity.owner}/${identity.repo} on workspace ${identity.workspace}.`,
       );
-      throw new TerraformError(409, stateLock.attrs.request);
+      throw new TerraformError(409, stateLockRequest);
     }
 
     // TODO Catch overwrite exception
-    await this.stateLockModel.model.create({
+    stateLock = await this.stateLockModel.model.create({
       pk: StateLockModel.prefix('pk', identity.ownerId),
       sk: StateLockModel.prefix(
         'sk',
@@ -156,8 +147,19 @@ export class StateService {
       id: stateLockRequest.ID,
       path: stateLockRequest.Path,
       lockedBy,
-      request: stateLockRequest,
-      expires: moment().add(duration, 'minute').unix(),
+    });
+
+    await this.stateLockRequestModel.model.update({
+      pk: stateLockRequest.pk,
+      sk: stateLockRequest.sk,
+      stateLock: {
+        pk: stateLock.attrs.pk,
+        sk: stateLock.attrs.sk,
+      },
+      identity: {
+        pk: identity.pk,
+        sk: identity.sk,
+      },
     });
   };
 
@@ -187,15 +189,37 @@ export class StateService {
 
     if (stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
-        `State is locked by ${identity.meta.name} for ${identity.owner}/${
-          identity.repo
-        } on workspace ${identity.workspace}. Lock expires at approximately ${moment(
-          stateLock.attrs.expires * 1000,
-        ).toISOString()}`,
+        `State is locked by ${identity.meta.name} for ${identity.owner}/${identity.repo} on workspace ${identity.workspace}.`,
       );
-      throw new TerraformError(409, stateLock.attrs.request);
+      throw new TerraformError(409, stateLockRequest);
     }
 
     await this.stateLockModel.model.destroy(stateLock.attrs.pk, stateLock.attrs.sk);
+  };
+
+  public saveRequest = async (stateLockRequest: StateLockRequest): Promise<StateLockRequest> => {
+    const saved = await this.stateLockRequestModel.model.create(
+      {
+        ...stateLockRequest,
+        pk: StateLockRequestModel.prefix('pk', stateLockRequest.ID),
+        sk: StateLockRequestModel.prefix('sk'),
+      },
+      { overwrite: false },
+    );
+
+    return saved.attrs;
+  };
+
+  public getRequest = async (id: string): Promise<StateLockRequest> => {
+    const saved = await this.stateLockRequestModel.model.get(
+      StateLockRequestModel.prefix('pk', id),
+      StateLockRequestModel.prefix('sk'),
+    );
+
+    if (!saved) {
+      throw new TerraformError(404);
+    }
+
+    return saved.attrs;
   };
 }

@@ -4,6 +4,7 @@ import { TerraformError } from '../interfaces/errors';
 import { Identity } from '../models/interfaces';
 import crypto from 'crypto';
 import { IdentityModel } from '../models/IdentityModel';
+import { StateLockRequest } from '../models/interfaces/StateLockRequest';
 // import seedrandom from 'seedrandom';
 
 export type IdentityWithToken = Identity & {
@@ -25,7 +26,10 @@ export class GithubService {
     this.identityModel = new IdentityModel();
   }
 
-  public getIdentity = async (request: HttpRequest): Promise<IdentityWithToken> => {
+  public getIdentity = async (
+    request: HttpRequest,
+    stateLockRequest?: StateLockRequest,
+  ): Promise<IdentityWithToken> => {
     const { authorization } = request.headers;
     if (!authorization) {
       throw new TerraformError(401);
@@ -45,11 +49,6 @@ export class GithubService {
     const decoded = Buffer.from(token, 'base64').toString('utf8');
 
     const [username, password] = decoded.split(':');
-
-    // Unauthenticated state storage for localstack
-    if (username === 'localstack' && password === 'localstack') {
-      return this.inferLocalstackIdentity();
-    }
 
     let owner: string | undefined;
     let repo: string | undefined;
@@ -80,7 +79,7 @@ export class GithubService {
     }
 
     try {
-      const identity = await this.inferIdentity(password, owner, repo, workspace);
+      const identity = await this.inferIdentity(password, owner, repo, workspace, stateLockRequest);
 
       console.log(
         `Using identity: ${identity.owner}/${identity.repo} [${identity.ownerId}/${identity.repoId}]`,
@@ -101,24 +100,31 @@ export class GithubService {
     owner?: string,
     repo?: string,
     workspace?: string,
+    stateLockRequest?: StateLockRequest,
   ): Promise<Identity> => {
     const tokenSha = crypto.createHash('sha256').update(auth).digest().toString('base64');
 
     console.log(
-      `Inferring identity (auth: ${auth} sha: ${tokenSha} owner: ${owner}, repo: ${repo}, workspace: ${workspace})`,
+      `Inferring identity (auth: ${auth} sha: ${tokenSha} owner: ${owner}, repo: ${repo}, workspace: ${workspace}, stateLockRequest; ${stateLockRequest})`,
     );
 
-    // TODO Expire stored identities
-    const storedIdentity = await this.identityModel.model.get(
-      IdentityModel.prefix('pk', tokenSha),
-      IdentityModel.prefix('sk'),
-    );
+    let storedIdentity: Identity | undefined;
 
-    if (storedIdentity) {
-      // Terraform planfiles contain backend configurations from plan operations
-      // Return the previously known identy from the plan operation
+    if (stateLockRequest && stateLockRequest.identity) {
+      const { pk, sk } = stateLockRequest.identity;
+
+      const identity = await this.identityModel.model.get(pk, sk);
+
+      if (identity) {
+        storedIdentity = identity.attrs;
+      }
+    }
+
+    if (storedIdentity && stateLockRequest && stateLockRequest.Operation === 'OperationTypeApply') {
+      // Terraform planfiles contain credentials from plan operations
+      // Return the previously known identity from the plan operation
       console.log(`Found previously known identity (sha: ${tokenSha})`);
-      return { ...storedIdentity.attrs, workspace: workspace || 'default' };
+      return { ...storedIdentity, workspace: workspace || 'default' };
     }
 
     const octokit = new Octokit({ auth });
@@ -211,34 +217,5 @@ export class GithubService {
     throw new Error(
       `Unable to determine owner and/or repository from token privileges. Ensure \`username\` is in the format of \`{owner}/{repository}\`, and the provided \`password\` (a GitHub token) has access to that repository.`,
     );
-  };
-
-  // TODO: support 'who' from State Lock Request
-  private inferLocalstackIdentity = (who = 'unknown@unknown'): IdentityWithToken => {
-    const tokenSha = crypto.createHash('sha256').update(who).digest().toString('base64');
-
-    const [username, host] = who.split('@');
-    if (!username || !host) {
-      throw new Error(`Invalid format for \`Who\` on state lock request`);
-    }
-
-    // Set IDs as negative so they're clearly out of valid range
-    // const ownerId = seedrandom(host).int32() * -1;
-    // const repoId = seedrandom(username).int32() * -1;
-
-    return {
-      pk: IdentityModel.prefix('pk', tokenSha),
-      sk: IdentityModel.prefix('sk'),
-      owner: host,
-      ownerId: -1,
-      repo: username,
-      repoId: -1,
-      token: who,
-      tokenSha: tokenSha,
-      workspace: 'default',
-      meta: {
-        name: 'localstack',
-      },
-    };
   };
 }
