@@ -207,6 +207,8 @@ export class StateService {
       { overwrite: false },
     );
 
+    console.log('Saved state lock request', saved.attrs);
+
     return saved.attrs;
   };
 

@@ -21,7 +21,7 @@ export const stateLockRequest = {
   identity: Joi.object({
     pk: Joi.string().required(),
     sk: Joi.string().required(),
-  }),
+  }).optional(),
 };
 
 export const stateLockRequestSchema = Joi.object(stateLockRequest).label('StateLockRequest');
