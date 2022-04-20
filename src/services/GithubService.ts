@@ -110,23 +110,16 @@ export class GithubService {
       )})`,
     );
 
-    let storedIdentity: Identity | undefined;
-
-    if (stateLockRequest && stateLockRequest.identity) {
-      const { pk, sk } = stateLockRequest.identity;
-
-      const identity = await this.identityModel.model.get(pk, sk);
-
-      if (identity) {
-        storedIdentity = identity.attrs;
-      }
-    }
+    const storedIdentity = await this.identityModel.model.get(
+      IdentityModel.prefix('pk', tokenSha),
+      IdentityModel.prefix('sk'),
+    );
 
     if (storedIdentity && stateLockRequest && stateLockRequest.Operation === 'OperationTypeApply') {
       // Terraform planfiles contain credentials from plan operations
       // Return the previously known identity from the plan operation
       console.log(`Found previously known identity (sha: ${tokenSha})`);
-      return { ...storedIdentity, workspace: workspace || 'default' };
+      return { ...storedIdentity.attrs, workspace: workspace || 'default' };
     }
 
     const octokit = new Octokit({ auth });
