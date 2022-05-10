@@ -38,12 +38,12 @@ export class GithubService {
     const [method, token] = authorization.split(' ');
 
     if (!method || !token) {
-      throw new TerraformError(400);
+      throw new TerraformError(401);
     }
 
     if (lowerCase(method) !== 'basic') {
       console.warn(`Method ${method} is not 'basic'`);
-      throw new TerraformError(400);
+      throw new TerraformError(401);
     }
 
     const decoded = Buffer.from(token, 'base64').toString('utf8');
@@ -56,7 +56,7 @@ export class GithubService {
 
     if (!password) {
       console.warn(`Missing password from authorization token`);
-      throw new TerraformError(400);
+      throw new TerraformError(401);
     }
 
     if (username) {
