@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { TsoaResponse } from 'tsoa';
 
 export class TerraformError extends Error {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -6,11 +6,11 @@ export class TerraformError extends Error {
     super();
   }
 
-  respond = (res: Response<any>): Response<any> => {
+  respond = (res: TsoaResponse<any, any>): TsoaResponse<any, any> => {
     if (!this.body) {
-      return res.status(this.statusCode);
+      return res(this.statusCode, {});
     }
 
-    return res.status(this.statusCode).json(JSON.stringify(this.body));
+    return res(this.statusCode, this.body);
   };
 }

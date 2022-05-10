@@ -186,6 +186,9 @@ export class GithubService {
     if (!identity && owner && repo) {
       console.log(`Fetching repository ${owner}/${repo}`);
       const data = await octokit.repos.get({ owner, repo });
+
+      // TODO: Restrict access to state for public repositories?
+
       identity = {
         pk: IdentityModel.prefix('pk', tokenSha),
         sk: IdentityModel.prefix('sk'),
