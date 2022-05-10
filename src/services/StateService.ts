@@ -161,6 +161,7 @@ export class StateService {
   public unlockState = async (
     identity: IdentityWithToken,
     stateLockRequest: StateLockRequest,
+    force: boolean,
   ): Promise<void> => {
     const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');
 
@@ -182,7 +183,7 @@ export class StateService {
 
     const [stateLock] = stateLocks.Items;
 
-    if (stateLock.attrs.lockedBy !== lockedBy) {
+    if (stateLock.attrs.lockedBy !== lockedBy && !force) {
       console.warn(
         `State is locked by ${identity.meta.name} for ${identity.owner}/${identity.repo} on workspace ${identity.workspace}.`,
       );

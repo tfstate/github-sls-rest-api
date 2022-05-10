@@ -34,7 +34,7 @@ export class ControllerV1 extends Controller {
   @Get()
   public async getState(
     @Request() request: HttpRequest,
-    @Res() res: TsoaResponse<200 | 400 | 401 | 404, any>,
+    @Res() res: TsoaResponse<200 | 401 | 403 | 404, any>,
   ): Promise<any> {
     try {
       const identity = await this.githubService.getIdentity(request);
@@ -55,7 +55,7 @@ export class ControllerV1 extends Controller {
     @Query('ID') id: string,
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     @Body() state: any,
-    @Res() res: TsoaResponse<200 | 400 | 401 | 404 | 409, void>,
+    @Res() res: TsoaResponse<200 | 400 | 401 | 403 | 404 | 409, void>,
   ): Promise<void> {
     try {
       const stateLockRequest = await this.stateService.getRequest(id);
@@ -75,7 +75,7 @@ export class ControllerV1 extends Controller {
   public async lockState(
     @Request() request: HttpRequest,
     @Body() lockRequest: StateLockRequest,
-    @Res() res: TsoaResponse<200 | 400 | 401 | 404 | 409, boolean>,
+    @Res() res: TsoaResponse<200 | 401 | 403 | 404 | 409, boolean>,
   ): Promise<boolean> {
     try {
       const stateLockRequest = await this.stateService.saveRequest(lockRequest);
@@ -95,12 +95,13 @@ export class ControllerV1 extends Controller {
   public async unlockState(
     @Request() request: HttpRequest,
     @Body() lockRequest: StateLockRequest,
-    @Res() res: TsoaResponse<200 | 400 | 401 | 404 | 409, boolean>,
+    @Res() res: TsoaResponse<200 | 401 | 403 | 404 | 409, boolean>,
+    @Query('force') force = false,
   ): Promise<boolean> {
     try {
       const stateLockRequest = await this.stateService.getRequest(lockRequest.ID);
       const identity = await this.githubService.getIdentity(request, stateLockRequest);
-      await this.stateService.unlockState(identity, stateLockRequest);
+      await this.stateService.unlockState(identity, stateLockRequest, force);
       const response = res(200, true);
       return response;
     } catch (e) {

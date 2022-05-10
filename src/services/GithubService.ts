@@ -56,7 +56,7 @@ export class GithubService {
 
     if (!password) {
       console.warn(`Missing password from authorization token`);
-      throw new TerraformError(401);
+      throw new TerraformError(403);
     }
 
     if (username) {
@@ -70,7 +70,7 @@ export class GithubService {
           `Username must be in the format of \`[{owner}/{repository}][@{workspace}]\``,
           username,
         );
-        throw new TerraformError(400);
+        throw new TerraformError(403);
       }
 
       if (repo.indexOf('@') !== -1) {
@@ -89,7 +89,7 @@ export class GithubService {
     } catch (e) {
       if (e instanceof Error) {
         console.warn(`Error inferring identity`, e);
-        throw new TerraformError(401);
+        throw new TerraformError(403);
       }
       throw e;
     }
