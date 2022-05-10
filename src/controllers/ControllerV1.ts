@@ -4,7 +4,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpStatusCodeLiteral,
   Post,
   Put,
   Query,
@@ -18,8 +17,6 @@ import { TerraformError } from '../interfaces/errors';
 import { StateLockRequest } from '../models/interfaces/StateLockRequest';
 import { GithubService } from '../services/GithubService';
 import { StateService } from '../services/StateService';
-
-type HeaderType = { [key: string]: string | string[] };
 
 @Route('/v1')
 @Tags('v1')
@@ -38,7 +35,7 @@ export class ControllerV1 extends Controller {
   public async getState(
     @Request() request: HttpRequest,
     @Res() res: TsoaResponse<200 | 400 | 401 | 404, any>,
-  ): Promise<TsoaResponse<HttpStatusCodeLiteral, any, HeaderType>> {
+  ): Promise<any> {
     try {
       const identity = await this.githubService.getIdentity(request);
       const state = await this.stateService.getState(identity);
@@ -59,7 +56,7 @@ export class ControllerV1 extends Controller {
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     @Body() state: any,
     @Res() res: TsoaResponse<200 | 400 | 401 | 404 | 409, void>,
-  ): Promise<TsoaResponse<HttpStatusCodeLiteral, void, HeaderType>> {
+  ): Promise<void> {
     try {
       const stateLockRequest = await this.stateService.getRequest(id);
       const identity = await this.githubService.getIdentity(request, stateLockRequest);
@@ -79,7 +76,7 @@ export class ControllerV1 extends Controller {
     @Request() request: HttpRequest,
     @Body() lockRequest: StateLockRequest,
     @Res() res: TsoaResponse<200 | 400 | 401 | 404 | 409, boolean>,
-  ): Promise<TsoaResponse<HttpStatusCodeLiteral, boolean, HeaderType>> {
+  ): Promise<boolean> {
     try {
       const stateLockRequest = await this.stateService.saveRequest(lockRequest);
       const identity = await this.githubService.getIdentity(request, stateLockRequest);
@@ -99,7 +96,7 @@ export class ControllerV1 extends Controller {
     @Request() request: HttpRequest,
     @Body() lockRequest: StateLockRequest,
     @Res() res: TsoaResponse<200 | 400 | 401 | 404 | 409, boolean>,
-  ): Promise<TsoaResponse<HttpStatusCodeLiteral, boolean, HeaderType>> {
+  ): Promise<boolean> {
     try {
       const stateLockRequest = await this.stateService.getRequest(lockRequest.ID);
       const identity = await this.githubService.getIdentity(request, stateLockRequest);

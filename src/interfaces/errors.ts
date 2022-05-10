@@ -6,7 +6,7 @@ export class TerraformError extends Error {
     super();
   }
 
-  respond = (res: TsoaResponse<any, any>): TsoaResponse<any, any> => {
+  respond = (res: TsoaResponse<any, any>): any => {
     if (!this.body) {
       return res(this.statusCode, {});
     }
