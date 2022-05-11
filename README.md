@@ -1,24 +1,68 @@
-# Terraform State Storage Backend for GitHub Tokens
+# TFState.dev
 
-This is a REST API for storing Terraform State using a Terraform HTTP State.
+**TFstate.dev** is a free [Terraform State Provider](https://www.terraform.io/language/settings/backends/http) and [Open Source Hosted Service](https://github.com/tfstate/github-sls-rest-api) for secure Terraform Remote State hosting using a GitHub Token, courtsey of [Scaffoldly](https://scaffold.ly)
 
-Authentication and authorization is done using a GitHub token.
+Features:
 
-## Using this API
+- GitHub Token used for Authentication and Authorization to Terraform State
+- Encrypted State in Amazon S3 using Amazon KMS
+- State Locking
+- Highly available [Hosted API](https://api.tfstate.dev/github/swagger.html) in AWS Lambda + API Gateway
+- Plug and Play: Only a GitHub Token is needed to use TFstate.dev
 
-This API is publicly hosted at:
+✅ We do not store or save the provided GitHub token.
 
-https://api.tfstate.dev/github/swagger.html
+---
 
-To use it in Terraform, please see the documentation here:
+## Getting started 🚀
 
-[TFstate.dev Homepage](https://tfstate.dev)
+First, a GitHub token is needed. This can be a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token), a [GitHub Actions Secret](https://docs.github.com/en/actions/security-guides/automatic-token-authentication), or any other form of [GitHub Oauth Token](https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/). At a minimum, the token needs `repo:read` access for the configured repository.
 
-## Developing/Contributing to this API
+➡ See our [example repository](https://github.com/tfstate/example).
+
+To use TFstate.dev in Terraform, add the following [backend configuration](https://www.terraform.io/language/settings/backends/http) to Terraform:
+
+```hcl
+terraform {
+  backend "http" {
+    address        = "https://api.tfstate.dev/github/v1"
+    lock_address   = "https://api.tfstate.dev/github/v1/lock"
+    unlock_address = "https://api.tfstate.dev/github/v1/lock"
+    lock_method    = "PUT"
+    unlock_method  = "DELETE"
+    username       = "{your-github-org}/{your-github-repo}"
+  }
+}
+```
+
+Then, Terraform can be configured to use the TFstate.dev backend using the GitHub token:
+
+```bash
+terraform init -backend-config="password={your-github-token}"
+terraform plan
+terraform apply
+```
+
+Alternatively, the `TF_HTTP_PASSWORD` environment variable can be set with the GitHub token:
+
+```bash
+export TF_HTTP_PASSWORD="{your-github-token}"
+terraform init
+terraform plan
+terraform apply
+```
+
+For more information go to [TFstate.dev](https://tfstate.dev)!
+
+---
+
+## Want to Contribute?
+
+### Developing/Contributing to this API
 
 We'd love contributions from the community to improve this API.
 
-### Running
+#### Running
 
 Requirements:
 
@@ -37,7 +81,7 @@ Once running locally, the OpenAPI docs can be found at:
 
 https://localhost:3000/github/swagger.html
 
-### Verifying Locally
+#### Verifying Locally
 
 While running the API locally, create a basic Terraform structure to test state functions:
 
@@ -104,3 +148,5 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+![](https://sly-dev.scaffold.ly/auth/px?tfstate-github-readme)
