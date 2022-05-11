@@ -149,7 +149,7 @@ export class StateService {
         { overwrite: false },
       );
     } catch (e) {
-      if (e instanceof Error) {
+      if ((e as AWS.AWSError).code === 'ConditionalCheckFailedException') {
         throw new TerraformError(409, stateLockRequest);
       }
       throw e;
