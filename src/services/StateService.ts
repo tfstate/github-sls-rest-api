@@ -118,10 +118,12 @@ export class StateService {
     const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');
     const path = stateLockRequest.Path || '';
 
-    let stateLock = await this.stateLockModel.model.get(
-      StateLockModel.prefix('pk', identity.ownerId),
-      StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}_${path}`),
-    );
+    const pk = StateLockModel.prefix('pk', identity.ownerId);
+    const sk = StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}_${path}`);
+
+    console.log(`Acquiring state lock (pk: ${pk} sk: ${sk})`);
+
+    let stateLock = await this.stateLockModel.model.get(pk, sk);
 
     if (stateLock && stateLock.attrs.lockedBy !== lockedBy) {
       console.warn(
@@ -132,8 +134,8 @@ export class StateService {
 
     // TODO Catch overwrite exception
     stateLock = await this.stateLockModel.model.create({
-      pk: StateLockModel.prefix('pk', identity.ownerId),
-      sk: StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}_${path}`),
+      pk,
+      sk,
       ownerId: identity.ownerId,
       owner: identity.owner,
       repoId: identity.repoId,

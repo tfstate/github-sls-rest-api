@@ -105,7 +105,10 @@ export class GithubService {
     const tokenSha = crypto.createHash('sha256').update(auth).digest().toString('base64');
 
     console.log(
-      `Inferring identity (auth: ${auth} sha: ${tokenSha} owner: ${owner}, repo: ${repo}, workspace: ${workspace}, stateLockRequest: ${JSON.stringify(
+      `Inferring identity (auth: ${auth.substring(
+        0,
+        10,
+      )} sha: ${tokenSha} owner: ${owner}, repo: ${repo}, workspace: ${workspace}, stateLockRequest: ${JSON.stringify(
         stateLockRequest,
       )})`,
     );
