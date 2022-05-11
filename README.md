@@ -1,4 +1,4 @@
-# TFState.dev
+# Terraform State Storage HTTP Backend
 
 **TFstate.dev** is a free [Terraform State Provider](https://www.terraform.io/language/settings/backends/http) and [Open Source Hosted Service](https://github.com/tfstate/github-sls-rest-api) for secure Terraform Remote State hosting using a GitHub Token, courtsey of [Scaffoldly](https://scaffold.ly)
 
