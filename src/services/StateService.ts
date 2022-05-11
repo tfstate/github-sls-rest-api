@@ -178,7 +178,7 @@ export class StateService {
     identity: IdentityWithToken,
     stateLockRequest?: StateLockRequest,
   ): Promise<void> => {
-    const path = stateLockRequest ? stateLockRequest.Path : '';
+    const path = stateLockRequest ? stateLockRequest.Path || '' : '';
     const pk = StateLockModel.prefix('pk', identity.ownerId);
     const sk = StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}_${path}`);
 
