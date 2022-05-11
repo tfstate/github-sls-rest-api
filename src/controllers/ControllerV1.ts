@@ -94,14 +94,18 @@ export class ControllerV1 extends Controller {
   @Delete('lock')
   public async unlockState(
     @Request() request: HttpRequest,
-    @Body() lockRequest: StateLockRequest,
     @Res() res: TsoaResponse<200 | 401 | 403 | 404 | 409, boolean>,
-    @Query('force') force = false,
+    @Body() lockRequest?: StateLockRequest,
   ): Promise<boolean> {
     try {
-      const stateLockRequest = await this.stateService.getRequest(lockRequest.ID);
-      const identity = await this.githubService.getIdentity(request, stateLockRequest);
-      await this.stateService.unlockState(identity, stateLockRequest, force);
+      if (lockRequest && lockRequest.ID) {
+        const stateLockRequest = await this.stateService.getRequest(lockRequest.ID);
+        const identity = await this.githubService.getIdentity(request, stateLockRequest);
+        await this.stateService.unlockState(identity, stateLockRequest);
+      } else {
+        const identity = await this.githubService.getIdentity(request);
+        await this.stateService.unlockState(identity);
+      }
       const response = res(200, true);
       return response;
     } catch (e) {

@@ -132,6 +132,11 @@ export class StateService {
       throw new TerraformError(409, stateLockRequest);
     }
 
+    if (!stateLockRequest.ID) {
+      console.warn(`Missing ID on stateLockRequest`);
+      throw new TerraformError(400);
+    }
+
     try {
       stateLock = await this.stateLockModel.model.create(
         {
@@ -171,43 +176,24 @@ export class StateService {
 
   public unlockState = async (
     identity: IdentityWithToken,
-    stateLockRequest: StateLockRequest,
-    force: boolean,
+    stateLockRequest?: StateLockRequest,
   ): Promise<void> => {
-    const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');
-
+    const path = stateLockRequest ? stateLockRequest.Path : '';
     const pk = StateLockModel.prefix('pk', identity.ownerId);
-    const sk = StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}`);
-    const id = stateLockRequest.ID;
+    const sk = StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}_${path}`);
 
-    console.log('Releasing state lock');
+    console.log(`Releasing state lock (pk: ${pk} sk: ${sk})`);
 
-    const [stateLocks] = await this.stateLockModel.model
-      .query(pk)
-      .where('sk')
-      .beginsWith(sk)
-      .filter('id')
-      .eq(id)
-      .exec()
-      .promise();
+    const stateLock = await this.stateLockModel.model.get(pk, sk);
 
-    if (!stateLocks || !stateLocks.Count) {
+    if (!stateLock) {
       console.log(
-        `No state locks for ${identity.ownerId}/${identity.repoId} on workspace ${identity.workspace} with id ${stateLockRequest.ID}`,
+        `No state locks for ${identity.ownerId}/${identity.repoId} on workspace ${identity.workspace} with path ${path}`,
       );
       return;
     }
 
-    const [stateLock] = stateLocks.Items;
-
-    if (stateLock.attrs.lockedBy !== lockedBy && !force) {
-      console.warn(
-        `State is locked by ${identity.meta.name} for ${identity.owner}/${identity.repo} on workspace ${identity.workspace}.`,
-      );
-      throw new TerraformError(409, stateLockRequest);
-    }
-
-    await this.stateLockModel.model.destroy(stateLock.attrs.pk, stateLock.attrs.sk);
+    this.stateLockModel.model.destroy(stateLock.attrs.pk, stateLock.attrs.sk);
   };
 
   public saveRequest = async (stateLockRequest: StateLockRequest): Promise<StateLockRequest> => {

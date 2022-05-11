@@ -7,13 +7,13 @@ export const stateLockRequest = {
   sk: Joi.string()
     .regex(/statelock/) // statelock
     .optional(),
-  ID: Joi.string().required(),
-  Operation: Joi.string().required(),
+  ID: Joi.string().optional(),
+  Operation: Joi.string().optional(),
   Info: Joi.string().allow('').optional(),
-  Who: Joi.string().required(),
-  Version: Joi.string().required(),
-  Created: Joi.string().required(),
-  Path: Joi.string().allow('').required(),
+  Who: Joi.string().optional(),
+  Version: Joi.string().optional(),
+  Created: Joi.string().optional(),
+  Path: Joi.string().allow('').optional(),
   stateLock: Joi.object({
     pk: Joi.string().required(),
     sk: Joi.string().required(),
