@@ -132,26 +132,35 @@ export class StateService {
       throw new TerraformError(409, stateLockRequest);
     }
 
-    // TODO Catch overwrite exception
-    stateLock = await this.stateLockModel.model.create({
-      pk,
-      sk,
-      ownerId: identity.ownerId,
-      owner: identity.owner,
-      repoId: identity.repoId,
-      repo: identity.repo,
-      workspace: identity.workspace,
-      id: stateLockRequest.ID,
-      path,
-      lockedBy,
-    });
+    try {
+      stateLock = await this.stateLockModel.model.create(
+        {
+          pk,
+          sk,
+          ownerId: identity.ownerId,
+          owner: identity.owner,
+          repoId: identity.repoId,
+          repo: identity.repo,
+          workspace: identity.workspace,
+          id: stateLockRequest.ID,
+          path,
+          lockedBy,
+        },
+        { overwrite: false },
+      );
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new TerraformError(409, stateLockRequest);
+      }
+      throw e;
+    }
 
     await this.stateLockRequestModel.model.update({
       pk: stateLockRequest.pk,
       sk: stateLockRequest.sk,
       stateLock: {
-        pk: stateLock.attrs.pk,
-        sk: stateLock.attrs.sk,
+        pk,
+        sk,
       },
       identity: {
         pk: identity.pk,
@@ -167,12 +176,18 @@ export class StateService {
   ): Promise<void> => {
     const lockedBy = crypto.createHash('sha256').update(identity.token, 'utf8').digest('base64');
 
+    const pk = StateLockModel.prefix('pk', identity.ownerId);
+    const sk = StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}`);
+    const id = stateLockRequest.ID;
+
+    console.log('Releasing state lock');
+
     const [stateLocks] = await this.stateLockModel.model
-      .query(StateLockModel.prefix('pk', identity.ownerId))
+      .query(pk)
       .where('sk')
-      .beginsWith(StateLockModel.prefix('sk', `${identity.repoId}_${identity.workspace}`))
+      .beginsWith(sk)
       .filter('id')
-      .eq(stateLockRequest.ID)
+      .eq(id)
       .exec()
       .promise();
 
