@@ -193,7 +193,7 @@ export class StateService {
       return;
     }
 
-    this.stateLockModel.model.destroy(stateLock.attrs.pk, stateLock.attrs.sk);
+    await this.stateLockModel.model.destroy(stateLock.attrs.pk, stateLock.attrs.sk);
   };
 
   public saveRequest = async (stateLockRequest: StateLockRequest): Promise<StateLockRequest> => {
