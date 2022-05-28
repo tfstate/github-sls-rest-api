@@ -20,6 +20,7 @@ import { Identity } from '../models/interfaces';
 import crypto from 'crypto';
 import { IdentityModel } from '../models/IdentityModel';
 import { StateLockRequest } from '../models/interfaces/StateLockRequest';
+import moment from 'moment';
 // import seedrandom from 'seedrandom';
 
 export type IdentityWithToken = Identity & {
@@ -117,6 +118,7 @@ export class GithubService {
     workspace?: string,
     stateLockRequest?: StateLockRequest,
   ): Promise<Identity> => {
+    const now = moment();
     const tokenSha = crypto.createHash('sha256').update(auth).digest().toString('base64');
 
     console.log(
@@ -137,6 +139,16 @@ export class GithubService {
       // Terraform planfiles contain credentials from plan operations
       // Return the previously known identity from the plan operation
       console.log(`Found previously known identity (sha: ${tokenSha})`);
+      return { ...storedIdentity.attrs, workspace: workspace || 'default' };
+    }
+
+    if (
+      storedIdentity &&
+      !stateLockRequest &&
+      storedIdentity.attrs.meta.createdAt &&
+      moment(storedIdentity.attrs.meta.createdAt).add(1, 'hour').isAfter(now)
+    ) {
+      console.log(`Found previously known identity used within 1 hour (sha: ${tokenSha})`);
       return { ...storedIdentity.attrs, workspace: workspace || 'default' };
     }
 
@@ -176,6 +188,7 @@ export class GithubService {
         tokenSha,
         meta: {
           name,
+          createdAt: now.toISOString(),
         },
       };
     }
@@ -197,6 +210,7 @@ export class GithubService {
         tokenSha,
         meta: {
           name,
+          createdAt: now.toISOString(),
         },
       };
     }
@@ -218,6 +232,7 @@ export class GithubService {
         tokenSha,
         meta: {
           name,
+          createdAt: now.toISOString(),
         },
       };
     }

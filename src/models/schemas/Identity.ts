@@ -17,6 +17,7 @@ import Joi from 'joi';
 
 export const metaSchema = Joi.object({
   name: Joi.string().required(),
+  createdAt: Joi.string().required(),
 }).label('IdentityMeta');
 
 export const identity = {
